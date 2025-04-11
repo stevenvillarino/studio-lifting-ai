@@ -150,7 +150,7 @@ const TrainingPlansSection = ({
     };
 
   return (
-    <>
+    
       {recommendedPlan && (
         
           
@@ -158,13 +158,13 @@ const TrainingPlansSection = ({
               
                 
                   
-                      <CardTitle>Recommended Training Plans</CardTitle>
+                      Recommended Training Plans
                   
                 
               
               
                 
-                  Based on your input, here are the recommended training plans:
+                  {`Based on your input, here are the recommended training plans:`}
                 
               
             
@@ -228,13 +228,6 @@ const TrainingPlansSection = ({
                                     
                                   
                                   
-                                    
-                                      
-                                        
-                                      
-                                    
-                                  
-                                  
                                     Log Workout
                                   
                                 
@@ -258,7 +251,7 @@ const TrainingPlansSection = ({
           
         
       )}
-    </>
+    
   );
 };
 
@@ -478,10 +471,10 @@ export default function Home() {
           
         
       ) : (
-        <>
+        
           
-              
             
+          
           
 
           {/* Historical Data Section */}
@@ -530,7 +523,7 @@ export default function Home() {
               
             ) : null}
           
-        </>
+        
       )}
     
   );
