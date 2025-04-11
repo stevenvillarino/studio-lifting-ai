@@ -30,11 +30,8 @@ const SuggestWorkoutOutputSchema = z.object({
   suggestedSets: z.number().describe('The suggested number of sets.'),
   suggestedReps: z.number().describe('The suggested number of reps.'),
   suggestedWeight: z.number().describe('The suggested weight to lift (in lbs).'),
-  reasoning: z
-    .string()
-    .describe(
-      'Explanation of why these values were recommended based on the input data.'
-    ),
+  reasoning:
+    z.string().describe('Explanation of why these values were recommended based on the input data.')
 });
 export type SuggestWorkoutOutput = z.infer<typeof SuggestWorkoutOutputSchema>;
 
@@ -65,7 +62,7 @@ const prompt = ai.definePrompt({
       suggestedReps: z.number().describe('The suggested number of reps.'),
       suggestedWeight: z.number().describe('The suggested weight to lift (in lbs).'),
       reasoning:
-          z.string().describe('Explanation of why these values were recommended based on the input data.')
+        z.string().describe('Explanation of why these values were recommended based on the input data.')
     }),
   },
   prompt: `Given the user's past workout data and fitness goals, suggest sets, reps,

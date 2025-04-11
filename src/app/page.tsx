@@ -53,10 +53,7 @@ const onboardingSchema = z.object({
   fitnessGoals: z.string().min(2, {
     message: 'Fitness goals must be at least 2 characters.',
   }),
-  experienceLevel: z.enum(['beginner', 'advanced']),
-  focus: z.string().min(2, {
-    message: 'Focus must be at least 2 characters.',
-  }),
+  focus: z.enum(['upper', 'lower', 'full']),
 });
 
 // Define training plans
@@ -67,6 +64,7 @@ const trainingPlans = [
     description: 'A 4-week plan focused on building muscle in the upper body.',
     duration: '4 Weeks',
     focus: 'Upper Body',
+    difficulty: 'medium',
     exercises: [
       {name: 'Bench Press', sets: 3, reps: '8-12', weight: '70% of 1RM'},
       {name: 'Overhead Press', sets: 3, reps: '8-12', weight: '65% of 1RM'},
@@ -79,6 +77,7 @@ const trainingPlans = [
     description: 'A 4-week plan focused on building muscle in the lower body.',
     duration: '4 Weeks',
     focus: 'Lower Body',
+    difficulty: 'medium',
     exercises: [
       {name: 'Squats', sets: 3, reps: '8-12', weight: '70% of 1RM'},
       {name: 'Deadlifts', sets: 1, reps: '5', weight: '85% of 1RM'},
@@ -91,10 +90,24 @@ const trainingPlans = [
     description: 'A 4-week plan focused on increasing overall strength.',
     duration: '4 Weeks',
     focus: 'Full Body',
+    difficulty: 'hard',
     exercises: [
       {name: 'Barbell Rows', sets: 3, reps: '5-8', weight: '75% of 1RM'},
       {name: 'Push Press', sets: 3, reps: '5-8', weight: '75% of 1RM'},
       {name: 'Goblet Squats', sets: 3, reps: '8-12', weight: 'Moderate'},
+    ],
+  },
+  {
+    id: 'beginner-full-body',
+    name: 'Beginner Full Body',
+    description: 'A 3-week plan for beginners to get started with weightlifting.',
+    duration: '3 Weeks',
+    focus: 'Full Body',
+    difficulty: 'easy',
+    exercises: [
+      {name: 'Dumbbell Rows', sets: 3, reps: '10-12', weight: 'Light'},
+      {name: 'Dumbbell Bench Press', sets: 3, reps: '10-12', weight: 'Light'},
+      {name: 'Bodyweight Squats', sets: 3, reps: '15-20', weight: 'Bodyweight'},
     ],
   },
 ];
@@ -149,8 +162,7 @@ export default function Home() {
   const onboardingForm = useForm<z.infer<typeof onboardingSchema>>({
     defaultValues: {
       fitnessGoals: '',
-      experienceLevel: 'beginner',
-      focus: '',
+      focus: 'upper',
     },
   });
 
@@ -246,15 +258,21 @@ export default function Home() {
   // Handler for onboarding form submission
   const handleOnboardingSubmit = (values: z.infer<typeof onboardingSchema>) => {
     // Basic logic to recommend a plan (can be improved with AI)
-    const recommendedPlanId = trainingPlans.find(plan =>
+    const recommendedPlans = trainingPlans.filter(plan =>
       plan.focus.toLowerCase().includes(values.focus.toLowerCase())
-    )?.id || trainingPlans[0].id;
+    );
 
-    setRecommendedPlan(recommendedPlanId);
+    // Sort plans by difficulty: easy, medium, hard
+    const sortedPlans = recommendedPlans.sort((a, b) => {
+      const difficultyOrder = { 'easy': 1, 'medium': 2, 'hard': 3 };
+      return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+    });
+
+    setRecommendedPlan(sortedPlans.map(plan => plan.id).join(',')); // Store all recommended plans
     setIsOnboarding(false);
     toast({
       title: 'Onboarding Complete',
-      description: 'Recommended plan has been set.',
+      description: 'Recommended plans have been set.',
     });
   };
 
@@ -311,6 +329,11 @@ export default function Home() {
     setCurrentWeek(prevWeek => (prevWeek > 1 ? prevWeek - 1 : 1));
   };
 
+  const getRecommendedPlans = () => {
+    if (!recommendedPlan) return [];
+    return recommendedPlan.split(',').map(planId => trainingPlans.find(p => p.id === planId)).filter(Boolean);
+  };
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6 text-center">LiftAssist</h1>
@@ -343,43 +366,22 @@ export default function Home() {
                   />
                   <FormField
                     control={onboardingForm.control}
-                    name="experienceLevel"
-                    render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Experience Level</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            defaultValue="beginner"
-                            className="flex flex-col space-y-1"
-                            onValueChange={field.onChange}
-                          >
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="beginner"/>
-                              </FormControl>
-                              <FormLabel>Beginner</FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="advanced"/>
-                              </FormControl>
-                              <FormLabel>Advanced</FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormDescription>Are you a beginner or advanced lifter?</FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={onboardingForm.control}
                     name="focus"
-                    render={({field}) => (
+                    render={({ field }) => (
                       <FormItem>
                         <FormLabel>Training Focus</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Upper Body, Full Body" {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a focus" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="upper">Upper Body</SelectItem>
+                            <SelectItem value="lower">Lower Body</SelectItem>
+                            <SelectItem value="full">Full Body</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormDescription>What area do you want to focus on?</FormDescription>
                       </FormItem>
                     )}
@@ -399,43 +401,49 @@ export default function Home() {
             <section className="mb-8">
               <Card>
                 <CardHeader>
-                  <CardTitle>Recommended Training Plan</CardTitle>
+                  <CardTitle>Recommended Training Plans</CardTitle>
                   <CardDescription>
-                    Based on your input, we recommend the "{trainingPlans.find(p => p.id === recommendedPlan)?.name}" plan.
+                    Based on your input, here are the recommended training plans:
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Follow the exercises below for week {currentWeek}:</p>
-                  <ul>
-                    {currentExercises.map((exercise, index) => (
-                      <li key={index} className="flex items-center justify-between py-2">
-                        <div>
-                          {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
-                        </div>
-                        <Select>
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Replace Exercise"/>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="alternative-1" onClick={() => handleReplaceExercise(exercise.name)}>
-                              Alternative 1
-                            </SelectItem>
-                            <SelectItem value="alternative-2" onClick={() => handleReplaceExercise(exercise.name)}>
-                              Alternative 2
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex justify-between mt-4">
-                    <Button onClick={handlePrevWeek} disabled={currentWeek === 1}>
-                      Previous Week
-                    </Button>
-                    <Button onClick={handleNextWeek}>
-                      Next Week
-                    </Button>
-                  </div>
+                  {getRecommendedPlans().map((plan) => (
+                    <div key={plan.id} className="mb-4">
+                      <h3 className="text-xl font-semibold">{plan.name} ({plan.difficulty})</h3>
+                      <p>{plan.description}</p>
+                      <p>Follow the exercises below for week {currentWeek}:</p>
+                      <ul>
+                        {currentExercises.map((exercise, index) => (
+                          <li key={index} className="flex items-center justify-between py-2">
+                            <div>
+                              {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
+                            </div>
+                            <Select>
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Replace Exercise"/>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="alternative-1" onClick={() => handleReplaceExercise(exercise.name)}>
+                                  Alternative 1
+                                </SelectItem>
+                                <SelectItem value="alternative-2" onClick={() => handleReplaceExercise(exercise.name)}>
+                                  Alternative 2
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex justify-between mt-4">
+                        <Button onClick={handlePrevWeek} disabled={currentWeek === 1}>
+                          Previous Week
+                        </Button>
+                        <Button onClick={handleNextWeek}>
+                          Next Week
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </section>
@@ -732,4 +740,3 @@ export default function Home() {
     </div>
   );
 }
-
