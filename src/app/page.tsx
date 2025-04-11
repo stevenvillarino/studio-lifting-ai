@@ -2,10 +2,7 @@
 
 import {useState, useEffect} from 'react';
 
-import {generateWorkoutPlan, GenerateWorkoutPlanOutput} from '@/ai/flows/generate-workout-plan';
 import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get-historical-workouts';
-import {suggestWorkout, SuggestWorkoutOutput} from '@/ai/flows/suggest-workout';
-import {suggestExerciseReplacement, SuggestExerciseReplacementOutput} from '@/ai/flows/suggest-exercise-replacement';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
@@ -13,7 +10,6 @@ import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel} from
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Skeleton} from '@/components/ui/skeleton';
-import {Slider} from '@/components/ui/slider';
 import {Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 import {Textarea} from '@/components/ui/textarea';
 import {useToast} from '@/hooks/use-toast';
@@ -22,30 +18,13 @@ import {CheckCircle, Circle, Dumbbell, Loader2, Settings} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
 
 // Define schemas for forms and data structures
-const formSchema = z.object({
-  exercise: z.string().min(2, {
-    message: 'Exercise must be at least 2 characters.',
-  }),
-  pastWorkoutData: z.string(),
-  fitnessGoals: z.string(),
-});
-
-const workoutPlanSchema = z.object({
-  workoutPrompt: z.string().min(10, {
-    message: 'Prompt must be at least 10 characters.',
-  }),
-});
-
-const exerciseReplacementSchema = z.object({
-  currentExercise: z.string().min(2, {
-    message: 'Exercise name must be at least 2 characters.',
-  }),
-  fitnessGoals: z.string(),
-  equipmentAvailable: z.string(),
-  muscleGroup: z.string(),
+const workoutLogSchema = z.object({
+  sets: z.string(),
+  reps: z.string(),
+  weight: z.string(),
+  date: z.string()
 });
 
 // Define onboarding schema
@@ -63,11 +42,13 @@ const trainingPlans = [
     duration: '4 Weeks',
     focus: 'Upper Body',
     difficulty: 'medium',
-    exercises: [
-      {name: 'Bench Press', sets: 3, reps: '8-12', weight: '70% of 1RM'},
-      {name: 'Overhead Press', sets: 3, reps: '8-12', weight: '65% of 1RM'},
-      {name: 'Pull-ups', sets: 3, reps: 'As many as possible', weight: 'Bodyweight'},
-    ],
+    exercises: {
+      "Monday": [{name: 'Bench Press', sets: 3, reps: '8-12', weight: '70% of 1RM'}],
+      "Tuesday": [{name: 'Overhead Press', sets: 3, reps: '8-12', weight: '65% of 1RM'}],
+      "Wednesday": [{name: 'Pull-ups', sets: 3, reps: 'As many as possible', weight: 'Bodyweight'}],
+      "Thursday": [{name: 'Barbell Rows', sets: 3, reps: '5-8', weight: '75% of 1RM'}],
+      "Friday": [{name: 'Push Press', sets: 3, reps: '5-8', weight: '75% of 1RM'}]
+    }
   },
   {
     id: 'hypertrophy-lower',
@@ -76,11 +57,13 @@ const trainingPlans = [
     duration: '4 Weeks',
     focus: 'Lower Body',
     difficulty: 'medium',
-    exercises: [
-      {name: 'Squats', sets: 3, reps: '8-12', weight: '70% of 1RM'},
-      {name: 'Deadlifts', sets: 1, reps: '5', weight: '85% of 1RM'},
-      {name: 'Leg Press', sets: 3, reps: '12-15', weight: '60% of 1RM'},
-    ],
+    exercises: {
+      "Monday": [{name: 'Squats', sets: 3, reps: '8-12', weight: '70% of 1RM'}],
+      "Tuesday": [{name: 'Deadlifts', sets: 1, reps: '5', weight: '85% of 1RM'}],
+      "Wednesday": [{name: 'Leg Press', sets: 3, reps: '12-15', weight: '60% of 1RM'}],
+      "Thursday": [{name: 'Hamstring Curls', sets: 3, reps: '8-12', weight: '70% of 1RM'}],
+      "Friday": [{name: 'Calf Raises', sets: 3, reps: '12-15', weight: 'Bodyweight'}]
+    }
   },
   {
     id: 'full-body-strength',
@@ -89,11 +72,13 @@ const trainingPlans = [
     duration: '4 Weeks',
     focus: 'Full Body',
     difficulty: 'hard',
-    exercises: [
-      {name: 'Barbell Rows', sets: 3, reps: '5-8', weight: '75% of 1RM'},
-      {name: 'Push Press', sets: 3, reps: '5-8', weight: '75% of 1RM'},
-      {name: 'Goblet Squats', sets: 3, reps: '8-12', weight: 'Moderate'},
-    ],
+    exercises: {
+      "Monday": [{name: 'Barbell Rows', sets: 3, reps: '5-8', weight: '75% of 1RM'}],
+      "Tuesday":  [{name: 'Push Press', sets: 3, reps: '5-8', weight: '75% of 1RM'}],
+      "Wednesday": [{name: 'Goblet Squats', sets: 3, reps: '8-12', weight: 'Moderate'}],
+      "Thursday": [{name: 'Dumbbell Rows', sets: 3, reps: '10-12', weight: 'Light'}],
+      "Friday": [{name: 'Dumbbell Bench Press', sets: 3, reps: '10-12', weight: 'Light'}]
+    }
   },
   {
     id: 'beginner-full-body',
@@ -102,11 +87,13 @@ const trainingPlans = [
     duration: '3 Weeks',
     focus: 'Full Body',
     difficulty: 'easy',
-    exercises: [
-      {name: 'Dumbbell Rows', sets: 3, reps: '10-12', weight: 'Light'},
-      {name: 'Dumbbell Bench Press', sets: 3, reps: '10-12', weight: 'Light'},
-      {name: 'Bodyweight Squats', sets: 3, reps: '15-20', weight: 'Bodyweight'},
-    ],
+    exercises: {
+      "Monday": [{name: 'Dumbbell Rows', sets: 3, reps: '10-12', weight: 'Light'}],
+      "Tuesday": [{name: 'Dumbbell Bench Press', sets: 3, reps: '10-12', weight: 'Light'}],
+      "Wednesday": [{name: 'Bodyweight Squats', sets: 3, reps: '15-20', weight: 'Bodyweight'}],
+      "Thursday": [{name: 'Dumbbell Rows', sets: 3, reps: '10-12', weight: 'Light'}],
+      "Friday": [{name: 'Dumbbell Bench Press', sets: 3, reps: '10-12', weight: 'Light'}]
+    }
   },
 ];
 
@@ -117,27 +104,49 @@ const TrainingPlansSection = ({
   handlePrevWeek,
   handleNextWeek,
   handleReplaceExercise,
+  handleLogWorkout,
+  selectedDay,
+  workoutLogForms
 }: {
   recommendedPlan: string | null;
   currentWeek: number;
   handlePrevWeek: () => void;
   handleNextWeek: () => void;
-  handleReplaceExercise: (exerciseName: string) => Promise<void>;
+  handleReplaceExercise: (exerciseName: string, replacementExercise: string) => Promise<void>;
+  handleLogWorkout: (exerciseName: string, logData: any) => Promise<void>;
+  selectedDay: string;
+  workoutLogForms: any;
 }) => {
+  const alternativeExercises = {
+    "Bench Press": ["Dumbbell Bench Press", "Incline Bench Press", "Decline Bench Press"],
+    "Overhead Press": ["Dumbbell Shoulder Press", "Arnold Press", "Lateral Raises"],
+    "Pull-ups": ["Lat Pulldowns", "Dumbbell Rows", "Barbell Rows"],
+    "Barbell Rows": ["Dumbbell Rows", "Cable Rows", "T-Bar Rows"],
+    "Push Press": ["Dumbbell Push Press", "Arnold Press", "Front Raises"],
+    "Squats": ["Leg Press", "Lunges", "Goblet Squats"],
+    "Deadlifts": ["Romanian Deadlifts", "Sumo Deadlifts", "Good Mornings"],
+    "Leg Press": ["Hack Squats", "Lunges", "Bulgarian Split Squats"],
+    "Hamstring Curls": ["Romanian Deadlifts", "Good Mornings", "Glute Bridges"],
+    "Calf Raises": ["Seated Calf Raises", "Donkey Calf Raises", "Leg Press Calf Raises"],
+    "Dumbbell Rows": ["Barbell Rows", "Cable Rows", "T-Bar Rows"],
+    "Dumbbell Bench Press": ["Bench Press", "Incline Dumbbell Press", "Decline Dumbbell Press"],
+    "Bodyweight Squats": ["Squats", "Lunges", "Jump Squats"],
+    "Goblet Squats": ["Squats", "Leg Press", "Lunges"],
+  };
+
   const getRecommendedPlans = () => {
     if (!recommendedPlan) return [];
     return recommendedPlan.split(',').map(planId => trainingPlans.find(p => p.id === planId)).filter(Boolean);
   };
 
-  const getExercisesForWeek = (selectedPlan: any) => {
-    if (!selectedPlan) return [];
+  const getExercisesForDay = (selectedPlan: any, day: string) => {
+      if (!selectedPlan) return [];
 
-    const plan = trainingPlans.find(p => p.id === selectedPlan);
-    if (!plan) return [];
+      const plan = trainingPlans.find(p => p.id === selectedPlan);
+      if (!plan) return [];
 
-    // For simplicity, assume exercises are the same each week
-    return plan.exercises;
-  };
+      return plan.exercises[day] || [];
+    };
 
   return (
     <>
@@ -152,31 +161,89 @@ const TrainingPlansSection = ({
             </CardHeader>
             <CardContent>
               {getRecommendedPlans().map((plan) => {
-                const currentExercises = getExercisesForWeek(plan.id);
+                const currentExercises = getExercisesForDay(plan.id, selectedDay);
+
                 return (
                   <div key={plan.id} className="mb-4">
                     <h3 className="text-xl font-semibold">{plan.name} ({plan.difficulty})</h3>
                     <p>{plan.description}</p>
-                    <p>Follow the exercises below for week {currentWeek}:</p>
+                    <p>Follow the exercises below for week {currentWeek}, {selectedDay}:</p>
                     <ul>
                       {currentExercises.map((exercise, index) => (
                         <li key={index} className="flex items-center justify-between py-2">
-                          <div>
-                            {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
-                          </div>
-                          <Select>
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue placeholder="Replace Exercise"/>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="alternative-1" onClick={() => handleReplaceExercise(exercise.name)}>
-                                Alternative 1
-                              </SelectItem>
-                              <SelectItem value="alternative-2" onClick={() => handleReplaceExercise(exercise.name)}>
-                                Alternative 2
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            <div>
+                              {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Select>
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="Replace Exercise"/>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {alternativeExercises[exercise.name] && alternativeExercises[exercise.name].map((altExercise, idx) => (
+                                    <SelectItem
+                                      key={idx}
+                                      value={altExercise}
+                                      onClick={() => handleReplaceExercise(exercise.name, altExercise)}
+                                    >
+                                      {altExercise}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Form {...workoutLogForms[exercise.name]}>
+                                <form onSubmit={workoutLogForms[exercise.name].handleSubmit((values) => handleLogWorkout(exercise.name, values))} className="space-y-2">
+                                  <FormField
+                                    control={workoutLogForms[exercise.name].control}
+                                    name="sets"
+                                    render={({field}) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Input placeholder="Sets" {...field} />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={workoutLogForms[exercise.name].control}
+                                    name="reps"
+                                    render={({field}) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Input placeholder="Reps" {...field} />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={workoutLogForms[exercise.name].control}
+                                    name="weight"
+                                    render={({field}) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Input placeholder="Weight" {...field} />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={workoutLogForms[exercise.name].control}
+                                    name="date"
+                                    render={({field}) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Input type="date" {...field} />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <Button type="submit" size="sm">
+                                    Log Workout
+                                  </Button>
+                                </form>
+                              </Form>
+                            </div>
                         </li>
                       ))}
                     </ul>
@@ -202,17 +269,11 @@ const TrainingPlansSection = ({
 // Main component
 export default function Home() {
   const {toast} = useToast();
-  const [aiResult, setAiResult] = useState<SuggestWorkoutOutput | null>(null);
-  const [aiWorkoutPlan, setAiWorkoutPlan] =
-    useState<GenerateWorkoutPlanOutput | null>(null);
   const [loading, setLoading] = useState(false);
-  const [workoutPlanLoading, setWorkoutPlanLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null); // Track selected training plan
   const [exerciseProgress, setExerciseProgress] = useState<{
     [exerciseName: string]: boolean;
   }>({}); // Track individual exercise progress
-  const [aiReplacement, setAiReplacement] = useState<SuggestExerciseReplacementOutput | null>(null);
-  const [replacementLoading, setReplacementLoading] = useState(false);
   const [historicalWorkouts, setHistoricalWorkouts] = useState<GetHistoricalWorkoutsOutput | null>(null);
   const [historicalDataLoading, setHistoricalDataLoading] = useState(false);
 
@@ -221,6 +282,8 @@ export default function Home() {
   const [currentWeek, setCurrentWeek] = useState(1); // Track current week of the program
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track settings state
 
+  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
+
   // Add state to check if it's client side
   const [isClient, setIsClient] = useState(false);
 
@@ -228,30 +291,35 @@ export default function Home() {
     setIsClient(true);
   }, []);
 
+  function getDayOfWeek() {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return days[new Date().getDay()];
+  }
 
-  // Form hooks
-  const form = useForm<z.infer<typeof formSchema>>({
-    defaultValues: {
-      exercise: '',
-      pastWorkoutData: '',
-      fitnessGoals: '',
-    },
-  });
+  const [workoutLogForms, setWorkoutLogForms] = useState({});
 
-  const workoutPlanForm = useForm<z.infer<typeof workoutPlanSchema>>({
-    defaultValues: {
-      workoutPrompt: '',
-    },
-  });
-
-  const exerciseReplacementForm = useForm<z.infer<typeof exerciseReplacementSchema>>({
-    defaultValues: {
-      currentExercise: '',
-      fitnessGoals: '',
-      equipmentAvailable: '',
-      muscleGroup: '',
-    },
-  });
+  useEffect(() => {
+    const forms = {};
+    trainingPlans.forEach(plan => {
+      if (plan.exercises) {
+        Object.values(plan.exercises).forEach(exercisesForDay => {
+          exercisesForDay.forEach(exercise => {
+            if (!forms[exercise.name]) {
+              forms[exercise.name] = useForm<z.infer<typeof workoutLogSchema>>({
+                defaultValues: {
+                  sets: '',
+                  reps: '',
+                  weight: '',
+                  date: new Date().toISOString().slice(0, 10),
+                },
+              });
+            }
+          });
+        });
+      }
+    });
+    setWorkoutLogForms(forms);
+  }, []);
 
   // Onboarding form
   const onboardingForm = useForm<z.infer<typeof onboardingSchema>>({
@@ -269,95 +337,6 @@ export default function Home() {
     const handleNextWeek = () => {
       setCurrentWeek(prevWeek => prevWeek + 1);
     };
-
-  // Form submission handlers
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setLoading(true);
-    setAiResult(null);
-    try {
-      const result = await suggestWorkout(values);
-      setAiResult(result);
-    } catch (e: any) {
-      toast({
-        title: 'Something went wrong.',
-        description: e.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onGenerateWorkoutPlan(
-    values: z.infer<typeof workoutPlanSchema>
-  ) {
-    setWorkoutPlanLoading(true);
-    setAiWorkoutPlan(null);
-    try {
-      const result = await generateWorkoutPlan(values);
-      setAiWorkoutPlan(result);
-    } catch (e: any) {
-      toast({
-        title: 'Something went wrong.',
-        description: e.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setWorkoutPlanLoading(false);
-    }
-  }
-
-  async function onSuggestExerciseReplacement(values: z.infer<typeof exerciseReplacementSchema>) {
-    setReplacementLoading(true);
-    setAiReplacement(null);
-    try {
-      const result = await suggestExerciseReplacement(values);
-      setAiReplacement(result);
-      toast({
-        title: 'Exercise Replacement Suggestion',
-        description: 'Replacement exercise suggested successfully.',
-      });
-    } catch (e: any) {
-      toast({
-        title: 'Error',
-        description: 'Failed to suggest exercise replacement.',
-        variant: 'destructive',
-      });
-    } finally {
-      setReplacementLoading(false);
-    }
-  }
-
-  // Handler to select a training plan
-  const handleSelectPlan = (planId: string) => {
-    setSelectedPlan(planId);
-    // Reset progress when a new plan is selected
-    setExerciseProgress({});
-  };
-
-  // Handler to toggle exercise progress
-  const handleToggleProgress = (exerciseName: string) => {
-    setExerciseProgress(prevProgress => ({
-      ...prevProgress,
-      [exerciseName]: !prevProgress[exercise.name],
-    }));
-  };
-
-  const handleGetHistoricalData = async (exerciseName: string) => {
-    setHistoricalDataLoading(true);
-    try {
-      const result = await getHistoricalWorkouts({exercise: exerciseName});
-      setHistoricalWorkouts(result);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: 'Failed to retrieve historical workout data.',
-        variant: 'destructive',
-      });
-    } finally {
-      setHistoricalDataLoading(false);
-    }
-  };
 
   // Handler for onboarding form submission
   const handleOnboardingSubmit = (values: z.infer<typeof onboardingSchema>) => {
@@ -387,37 +366,40 @@ export default function Home() {
     const plan = trainingPlans.find(p => p.id === selectedPlan);
     if (!plan) return [];
 
+    const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     // For simplicity, assume exercises are the same each week
-    return plan.exercises;
+    return plan.exercises[dayOfWeek] || [];
   };
 
-  // Function to handle exercise replacement
-  const handleReplaceExercise = async (exerciseName: string) => {
-    // Implement exercise replacement logic here
-    // This is a placeholder function - replace with your actual logic
-    const values = {
-      currentExercise: exerciseName,
-      fitnessGoals: onboardingForm.getValues('fitnessGoals'),
-      equipmentAvailable: 'Dumbbells, Resistance Bands', // Example
-      muscleGroup: 'Example', // Example
-    };
-    setReplacementLoading(true);
-    setAiReplacement(null);
-    try {
-      const result = await suggestExerciseReplacement(values);
-      setAiReplacement(result);
+    const handleReplaceExercise = async (exerciseName: string, replacementExercise: string) => {
       toast({
-        title: 'Exercise Replacement Suggestion',
-        description: 'Replacement exercise suggested successfully.',
+        title: 'Exercise Replaced',
+        description: `${exerciseName} replaced with ${replacementExercise}.`,
       });
-    } catch (e: any) {
+    };
+
+    const handleLogWorkout = async (exerciseName: string, logData: any) => {
+      //fetch historical data if exercise name matches;
+      // Update historical data (replace with actual data storage logic)
+      toast({
+        title: 'Workout Logged',
+        description: `Logged workout data for ${exerciseName}.`,
+      });
+    };
+
+  const handleGetHistoricalData = async (exerciseName: string) => {
+    setHistoricalDataLoading(true);
+    try {
+      const result = await getHistoricalWorkouts({exercise: exerciseName});
+      setHistoricalWorkouts(result);
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to suggest exercise replacement.',
+        description: 'Failed to retrieve historical workout data.',
         variant: 'destructive',
       });
     } finally {
-      setReplacementLoading(false);
+      setHistoricalDataLoading(false);
     }
   };
 
@@ -505,254 +487,11 @@ export default function Home() {
               handlePrevWeek={handlePrevWeek}
               handleNextWeek={handleNextWeek}
               handleReplaceExercise={handleReplaceExercise}
+              handleLogWorkout={handleLogWorkout}
+              selectedDay={selectedDay}
+              workoutLogForms={workoutLogForms}
             />
           )}
-
-          {/* AI Workout Suggestion Section */}
-          <section className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workout Suggestion</CardTitle>
-                <CardDescription>
-                  Get AI-powered suggestions for your next workout.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="exercise"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Exercise</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Bench Press" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Enter the exercise you want suggestions for.
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="pastWorkoutData"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Past Workout Data</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Sets: 3, Reps: 8, Weight: 150lbs"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter your past workout data for this exercise.
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="fitnessGoals"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Fitness Goals</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Increase strength" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Enter your fitness goals for this exercise.
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" disabled={loading} className="bg-primary text-primary-foreground">
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                          Suggest Workout
-                        </>
-                      ) : (
-                        <>
-                          <Dumbbell className="mr-2 h-4 w-4"/>
-                          Suggest Workout
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-                {aiResult ? (
-                  <div className="mt-6">
-                    <h3 className="text-xl font-semibold mb-2">Suggestion:</h3>
-                    <p>
-                      Sets: {aiResult.suggestedSets}, Reps: {aiResult.suggestedReps},
-                      Weight: {aiResult.suggestedWeight} lbs
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-semibold">Reasoning:</span>{' '}
-                      {aiResult.reasoning}
-                    </p>
-                  </div>
-                ) : loading ? (
-                  <Skeleton className="w-full h-20 mt-6"/>
-                ) : null}
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* AI Workout Plan Generation Section */}
-          <section className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Generate Workout Plan</CardTitle>
-                <CardDescription>
-                  Generate a full workout plan based on your prompt.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...workoutPlanForm}>
-                  <form
-                    onSubmit={workoutPlanForm.handleSubmit(onGenerateWorkoutPlan)}
-                    className="space-y-4"
-                  >
-                    <FormField
-                      control={workoutPlanForm.control}
-                      name="workoutPrompt"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Workout Prompt</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Full body workout for strength"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter a prompt describing the workout you want to do.
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" disabled={workoutPlanLoading} className="bg-primary text-primary-foreground">
-                      {workoutPlanLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                          Generate Workout Plan
-                        </>
-                      ) : (
-                        <>
-                          <Dumbbell className="mr-2 h-4 w-4"/>
-                          Generate Workout Plan
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-                {aiWorkoutPlan ? (
-                  <div className="mt-6">
-                    <h3 className="text-xl font-semibold mb-2">Workout Plan:</h3>
-                    <p>{aiWorkoutPlan.workoutPlan}</p>
-                  </div>
-                ) : workoutPlanLoading ? (
-                  <Skeleton className="w-full h-20 mt-6"/>
-                ) : null}
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Exercise Replacement Suggestion Section */}
-          <section>
-            <Card>
-              <CardHeader>
-                <CardTitle>Suggest Exercise Replacement</CardTitle>
-                <CardDescription>
-                  Suggest an alternative exercise based on your criteria.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...exerciseReplacementForm}>
-                  <form onSubmit={exerciseReplacementForm.handleSubmit(onSuggestExerciseReplacement)}
-                        className="space-y-4">
-                    <FormField
-                      control={exerciseReplacementForm.control}
-                      name="currentExercise"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Current Exercise</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Squats" {...field} />
-                          </FormControl>
-                          <FormDescription>Enter the exercise you want to replace.</FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={exerciseReplacementForm.control}
-                      name="fitnessGoals"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Fitness Goals</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Increase strength" {...field} />
-                          </FormControl>
-                          <FormDescription>Enter your fitness goals.</FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={exerciseReplacementForm.control}
-                      name="equipmentAvailable"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Equipment Available</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Dumbbells, Resistance Bands" {...field} />
-                          </FormControl>
-                          <FormDescription>List the equipment you have available.</FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={exerciseReplacementForm.control}
-                      name="muscleGroup"
-                      render={({field}) => (
-                        <FormItem>
-                          <FormLabel>Muscle Group</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Legs" {...field} />
-                          </FormControl>
-                          <FormDescription>Enter the muscle group you want to target.</FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" disabled={replacementLoading} className="bg-primary text-primary-foreground">
-                      {replacementLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                          Suggest Replacement
-                        </>
-                      ) : (
-                        'Suggest Replacement'
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-                {aiReplacement ? (
-                  <div className="mt-6">
-                    <h3 className="text-xl font-semibold mb-2">Replacement Suggestion:</h3>
-                    <p>{aiReplacement.suggestedExercise}</p>
-                    <p className="mt-2">
-                      <span className="font-semibold">Reasoning:</span> {aiReplacement.reasoning}
-                    </p>
-                  </div>
-                ) : replacementLoading ? (
-                  <Skeleton className="w-full h-20 mt-6"/>
-                ) : null}
-              </CardContent>
-            </Card>
-          </section>
 
           {/* Historical Data Section */}
           <section className="mt-8">
