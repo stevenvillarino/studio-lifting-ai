@@ -160,7 +160,7 @@ const TrainingPlansSection = ({
                 
               
               
-                {`Based on your input, here are the recommended training plans:`}
+                Based on your input, here are the recommended training plans:
               
             
             
