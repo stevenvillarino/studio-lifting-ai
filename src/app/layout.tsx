@@ -23,12 +23,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        {isClient ? children : null}
       </body>
     </html>
   );
 }
+
 
