@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect, useMemo} from 'react';
+import {useState, useEffect, useMemo, useRef} from 'react';
 
 import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get-historical-workouts';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
@@ -314,11 +314,6 @@ export default function Home() {
     return forms;
   }, []);
 
-  useEffect(() => {
-    setWorkoutLogForms(workoutLogFormsMemo);
-  }, [workoutLogFormsMemo]);
-
-
   // Add state to check if it's client side
   const [isClient, setIsClient] = useState(false);
 
@@ -412,6 +407,10 @@ export default function Home() {
     if (!recommendedPlan) return [];
     return recommendedPlan.split(',').map(planId => trainingPlans.find(p => p.id === planId)).filter(Boolean);
   };
+  
+  useEffect(() => {
+    setWorkoutLogForms(workoutLogFormsMemo);
+  }, [workoutLogFormsMemo]);
 
   return (
     <div className="container mx-auto py-10">
@@ -543,5 +542,3 @@ export default function Home() {
     </div>
   );
 }
-
-
