@@ -29,8 +29,8 @@ const workoutLogSchema = z.object({
 
 // Define onboarding schema
 const onboardingSchema = z.object({
-  fitnessGoals: z.enum(['build-muscle', 'lose-weight', 'increase-strength', 'improve-endurance']),
-  focus: z.enum(['upper', 'lower', 'full']),
+  fitnessGoals: z.string(),
+  focus: z.string(),
 });
 
 // Define training plans
@@ -154,10 +154,14 @@ const TrainingPlansSection = ({
         
           
             
-              <CardTitle>Recommended Training Plans</CardTitle>
-              <CardDescription>
+              
+                
+                  Recommended Training Plans
+                
+              
+              
                 {`Based on your input, here are the recommended training plans:`}
-              </CardDescription>
+              
             
             
               {getRecommendedPlans().map((plan) => {
@@ -169,7 +173,7 @@ const TrainingPlansSection = ({
                       {plan.name} ({plan.difficulty})
                     
                     {plan.description}
-                    Follow the exercises below for week {currentWeek}, {selectedDay}:
+                    {`Follow the exercises below for week ${currentWeek}, ${selectedDay}:`}
                     
                       {currentExercises.map((exercise, index) => (
                         
@@ -179,9 +183,9 @@ const TrainingPlansSection = ({
 
                             
                               
-                                <SelectTrigger className="w-[180px]">
+                                
                                   
-                                </SelectTrigger>
+                                
                                 
                                   {alternativeExercises[exercise.name] && alternativeExercises[exercise.name].map((altExercise, idx) => (
                                     
@@ -464,16 +468,7 @@ export default function Home() {
       ) : (
         <>
           {isClient && (
-            <TrainingPlansSection
-              recommendedPlan={recommendedPlan}
-              currentWeek={currentWeek}
-              handlePrevWeek={handlePrevWeek}
-              handleNextWeek={handleNextWeek}
-              handleReplaceExercise={handleReplaceExercise}
-              handleLogWorkout={handleLogWorkout}
-              selectedDay={selectedDay}
-              workoutLogForms={workoutLogForms}
-            />
+            
           )}
 
           {/* Historical Data Section */}
