@@ -150,108 +150,24 @@ const TrainingPlansSection = ({
     };
 
   return (
-    
+    <>
       {recommendedPlan && (
         
           
             
               
-                
-                  
-                    Recommended Training Plans
-                  
-                
-              
-              
-                
-                  Based on your input, here are the recommended training plans:
-                
+                <CardTitle>Recommended Training Plans</CardTitle>
               
             
             
-              {getRecommendedPlans().map((plan) => {
-                const currentExercises = getExercisesForDay(plan.id, selectedDay);
-
-                return (
-                  
-                    
-                      {plan.name} ({plan.difficulty})
-                    
-                    {plan.description}
-                    Follow the exercises below for week {currentWeek}, {selectedDay}:
-                    
-                      {currentExercises.map((exercise, index) => (
-                        
-                            
-                              {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
-                            
-                            
-                              
-                                
-                                  
-                                    
-                                      
-                                        
-                                      
-                                    
-                                  
-                                  
-                                    {alternativeExercises[exercise.name] && alternativeExercises[exercise.name].map((altExercise, idx) => (
-                                      
-                                        {altExercise}
-                                      
-                                    ))}
-                                  
-                                
-                              
-                              
-                                
-                                  
-                                    
-                                      
-                                        
-                                      
-                                    
-                                  
-                                  
-                                    
-                                      
-                                        
-                                      
-                                    
-                                  
-                                  
-                                    
-                                      
-                                        
-                                      
-                                    
-                                  
-                                  
-                                    Log Workout
-                                  
-                                
-                              
-                            
-                        
-                      ))}
-                    
-                    
-                      
-                        Previous Week
-                      
-                      
-                        Next Week
-                      
-                    
-                  
-                );
-              })}
+              
+                Based on your input, here are the recommended training plans:
+              
             
           
         
       )}
-    
+    </>
   );
 };
 
@@ -523,13 +439,21 @@ export default function Home() {
               
             ) : null}
           
+           {recommendedPlan && (
+             
+                
+                  
+                    <CardTitle>Recommended Training Plans</CardTitle>
+                  
+                
+              
+              
+                Based on your input, here are the recommended training plans:
+              
+            
+          )}
         
       )}
     
   );
 }
-
-
-
-
-
