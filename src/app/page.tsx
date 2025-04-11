@@ -5,7 +5,7 @@ import {useState, useEffect, useMemo, useRef} from 'react';
 import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get-historical-workouts';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
 import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Card, CardContent, CardDescription, CardHeader} from '@/components/ui/card';
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel} from '@/components/ui/form';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
@@ -18,6 +18,7 @@ import {CheckCircle, Circle, Dumbbell, Loader2, Settings} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {CardTitle} from "@/components/ui/card"
 
 // Define schemas for forms and data structures
 const workoutLogSchema = z.object({
@@ -156,11 +157,17 @@ const TrainingPlansSection = ({
             
               
                 
-                  Recommended Training Plans
+                  
+                    
+                      Recommended Training Plans
+                    
+                  
                 
               
               
-                Based on your input, here are the recommended training plans:
+                
+                  Based on your input, here are the recommended training plans:
+                
               
             
             
@@ -173,25 +180,30 @@ const TrainingPlansSection = ({
                       {plan.name} ({plan.difficulty})
                     
                     {plan.description}
-                    {`Follow the exercises below for week ${currentWeek}, ${selectedDay}:`}
+                    Follow the exercises below for week {currentWeek}, {selectedDay}:
                     
                       {currentExercises.map((exercise, index) => (
                         
                             
                               {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
                             
-
                             
                               
                                 
                                   
-                                
-                                
-                                  {alternativeExercises[exercise.name] && alternativeExercises[exercise.name].map((altExercise, idx) => (
                                     
-                                      {altExercise}
+                                      
+                                        
+                                      
                                     
-                                  ))}
+                                  
+                                  
+                                    {alternativeExercises[exercise.name] && alternativeExercises[exercise.name].map((altExercise, idx) => (
+                                      
+                                        {altExercise}
+                                      
+                                    ))}
+                                  
                                 
                               
                               
@@ -271,6 +283,10 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track settings state
 
   const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
+  const [loggingEnabled, setLoggingEnabled] = useState(false);
+  const [alternativeExerciseModalOpen, setAlternativeExerciseModalOpen] = useState(false);
+
+  const [muscleGroups, setMuscleGroups] = useState(['Chest', 'Back', 'Legs', 'Shoulders', 'Arms']);
 
   // Initialize workoutLogForms within the component
   const [workoutLogForms, setWorkoutLogForms] = useState(() => {
@@ -378,7 +394,7 @@ export default function Home() {
         variant: 'destructive',
       });
     } finally {
-      setHistoricalDataLoading(false);
+      setHistoricalDataLoading = false;
     }
   };
 
@@ -425,9 +441,7 @@ export default function Home() {
           
             
               
-                
-                  Fitness Goals
-                
+                Fitness Goals
                 
                   
                     
@@ -467,9 +481,10 @@ export default function Home() {
         
       ) : (
         <>
-          {isClient && (
+          
+              
             
-          )}
+          
 
           {/* Historical Data Section */}
           
