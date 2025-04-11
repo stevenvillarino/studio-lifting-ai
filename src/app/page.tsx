@@ -3,6 +3,7 @@
 import {useState} from 'react';
 
 import {generateWorkoutPlan, GenerateWorkoutPlanOutput} from '@/ai/flows/generate-workout-plan';
+import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get-historical-workouts';
 import {suggestWorkout, SuggestWorkoutOutput} from '@/ai/flows/suggest-workout';
 import {suggestExerciseReplacement, SuggestExerciseReplacementOutput} from '@/ai/flows/suggest-exercise-replacement';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
@@ -13,6 +14,7 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Slider} from '@/components/ui/slider';
+import {Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 import {Textarea} from '@/components/ui/textarea';
 import {useToast} from '@/hooks/use-toast';
 import {cn} from '@/lib/utils';
@@ -98,6 +100,8 @@ export default function Home() {
   }>({}); // Track individual exercise progress
   const [aiReplacement, setAiReplacement] = useState<SuggestExerciseReplacementOutput | null>(null);
   const [replacementLoading, setReplacementLoading] = useState(false);
+  const [historicalWorkouts, setHistoricalWorkouts] = useState<GetHistoricalWorkoutsOutput | null>(null);
+  const [historicalDataLoading, setHistoricalDataLoading] = useState(false);
 
   // Form hooks
   const form = useForm<z.infer<typeof formSchema>>({
@@ -192,8 +196,24 @@ export default function Home() {
   const handleToggleProgress = (exerciseName: string) => {
     setExerciseProgress(prevProgress => ({
       ...prevProgress,
-      [exerciseName]: !prevProgress[exerciseName],
+      [exerciseName]: !prevProgress[exercise.name],
     }));
+  };
+
+  const handleGetHistoricalData = async (exerciseName: string) => {
+    setHistoricalDataLoading(true);
+    try {
+      const result = await getHistoricalWorkouts({ exercise: exerciseName });
+      setHistoricalWorkouts(result);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to retrieve historical workout data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setHistoricalDataLoading(false);
+    }
   };
 
   return (
@@ -228,6 +248,17 @@ export default function Home() {
                         </button>
                         {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
                       </div>
+                      <Button onClick={() => handleGetHistoricalData(exercise.name)}
+                              disabled={historicalDataLoading}>
+                        {historicalDataLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                            Loading...
+                          </>
+                        ) : (
+                          'View History'
+                        )}
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -481,6 +512,47 @@ export default function Home() {
             ) : null}
           </CardContent>
         </Card>
+      </section>
+
+      {/* Historical Data Section */}
+      <section className="mt-8">
+        {historicalWorkouts ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Historical Workout Data</CardTitle>
+              <CardDescription>
+                A history of your workouts for this exercise.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Sets</TableHead>
+                    <TableHead>Reps</TableHead>
+                    <TableHead>Weight (lbs)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historicalWorkouts.map((workout, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{workout.date}</TableCell>
+                      <TableCell>{workout.sets}</TableCell>
+                      <TableCell>{workout.reps}</TableCell>
+                      <TableCell>{workout.weight}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableCaption>
+                  Historical workout data.
+                </TableCaption>
+              </Table>
+            </CardContent>
+          </Card>
+        ) : historicalDataLoading ? (
+          <Skeleton className="w-full h-40 mt-6"/>
+        ) : null}
       </section>
     </div>
   );
