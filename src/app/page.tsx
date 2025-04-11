@@ -158,9 +158,7 @@ const TrainingPlansSection = ({
               
                 
                   
-                    
-                      Recommended Training Plans
-                    
+                      <CardTitle>Recommended Training Plans</CardTitle>
                   
                 
               
@@ -537,3 +535,4 @@ export default function Home() {
     
   );
 }
+
