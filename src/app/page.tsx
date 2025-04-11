@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 
 import {generateWorkoutPlan, GenerateWorkoutPlanOutput} from '@/ai/flows/generate-workout-plan';
 import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get-historical-workouts';
@@ -221,6 +221,14 @@ export default function Home() {
   const [currentWeek, setCurrentWeek] = useState(1); // Track current week of the program
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track settings state
 
+  // Add state to check if it's client side
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+
   // Form hooks
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
@@ -252,6 +260,15 @@ export default function Home() {
       focus: 'upper',
     },
   });
+
+    // Handlers for previous and next week buttons
+    const handlePrevWeek = () => {
+      setCurrentWeek(prevWeek => Math.max(prevWeek - 1, 1));
+    };
+
+    const handleNextWeek = () => {
+      setCurrentWeek(prevWeek => prevWeek + 1);
+    };
 
   // Form submission handlers
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -481,13 +498,15 @@ export default function Home() {
         </section>
       ) : (
         <>
-          <TrainingPlansSection
-            recommendedPlan={recommendedPlan}
-            currentWeek={currentWeek}
-            handlePrevWeek={handlePrevWeek}
-            handleNextWeek={handleNextWeek}
-            handleReplaceExercise={handleReplaceExercise}
-          />
+          {isClient && (
+            <TrainingPlansSection
+              recommendedPlan={recommendedPlan}
+              currentWeek={currentWeek}
+              handlePrevWeek={handlePrevWeek}
+              handleNextWeek={handleNextWeek}
+              handleReplaceExercise={handleReplaceExercise}
+            />
+          )}
 
           {/* AI Workout Suggestion Section */}
           <section className="mb-8">
