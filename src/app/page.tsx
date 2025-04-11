@@ -50,9 +50,7 @@ const exerciseReplacementSchema = z.object({
 
 // Define onboarding schema
 const onboardingSchema = z.object({
-  fitnessGoals: z.string().min(2, {
-    message: 'Fitness goals must be at least 2 characters.',
-  }),
+  fitnessGoals: z.enum(['build-muscle', 'lose-weight', 'increase-strength', 'improve-endurance']),
   focus: z.enum(['upper', 'lower', 'full']),
 });
 
@@ -112,6 +110,95 @@ const trainingPlans = [
   },
 ];
 
+// TrainingPlansSection component to encapsulate the training plans logic
+const TrainingPlansSection = ({
+  recommendedPlan,
+  currentWeek,
+  handlePrevWeek,
+  handleNextWeek,
+  handleReplaceExercise,
+}: {
+  recommendedPlan: string | null;
+  currentWeek: number;
+  handlePrevWeek: () => void;
+  handleNextWeek: () => void;
+  handleReplaceExercise: (exerciseName: string) => Promise<void>;
+}) => {
+  const getRecommendedPlans = () => {
+    if (!recommendedPlan) return [];
+    return recommendedPlan.split(',').map(planId => trainingPlans.find(p => p.id === planId)).filter(Boolean);
+  };
+
+  const getExercisesForWeek = (selectedPlan: any) => {
+    if (!selectedPlan) return [];
+
+    const plan = trainingPlans.find(p => p.id === selectedPlan);
+    if (!plan) return [];
+
+    // For simplicity, assume exercises are the same each week
+    return plan.exercises;
+  };
+
+  return (
+    <>
+      {recommendedPlan && (
+        <section className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recommended Training Plans</CardTitle>
+              <CardDescription>
+                Based on your input, here are the recommended training plans:
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {getRecommendedPlans().map((plan) => {
+                const currentExercises = getExercisesForWeek(plan.id);
+                return (
+                  <div key={plan.id} className="mb-4">
+                    <h3 className="text-xl font-semibold">{plan.name} ({plan.difficulty})</h3>
+                    <p>{plan.description}</p>
+                    <p>Follow the exercises below for week {currentWeek}:</p>
+                    <ul>
+                      {currentExercises.map((exercise, index) => (
+                        <li key={index} className="flex items-center justify-between py-2">
+                          <div>
+                            {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
+                          </div>
+                          <Select>
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Replace Exercise"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="alternative-1" onClick={() => handleReplaceExercise(exercise.name)}>
+                                Alternative 1
+                              </SelectItem>
+                              <SelectItem value="alternative-2" onClick={() => handleReplaceExercise(exercise.name)}>
+                                Alternative 2
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex justify-between mt-4">
+                      <Button onClick={handlePrevWeek} disabled={currentWeek === 1}>
+                        Previous Week
+                      </Button>
+                      <Button onClick={handleNextWeek}>
+                        Next Week
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </section>
+      )}
+    </>
+  );
+};
+
 // Main component
 export default function Home() {
   const {toast} = useToast();
@@ -161,7 +248,7 @@ export default function Home() {
   // Onboarding form
   const onboardingForm = useForm<z.infer<typeof onboardingSchema>>({
     defaultValues: {
-      fitnessGoals: '',
+      fitnessGoals: 'build-muscle',
       focus: 'upper',
     },
   });
@@ -317,18 +404,6 @@ export default function Home() {
     }
   };
 
-  const currentExercises = getExercisesForWeek();
-
-  // Function to move to the next week
-  const handleNextWeek = () => {
-    setCurrentWeek(prevWeek => prevWeek + 1);
-  };
-
-  // Function to move to the previous week
-  const handlePrevWeek = () => {
-    setCurrentWeek(prevWeek => (prevWeek > 1 ? prevWeek - 1 : 1));
-  };
-
   const getRecommendedPlans = () => {
     if (!recommendedPlan) return [];
     return recommendedPlan.split(',').map(planId => trainingPlans.find(p => p.id === planId)).filter(Boolean);
@@ -357,9 +432,19 @@ export default function Home() {
                     render={({field}) => (
                       <FormItem>
                         <FormLabel>Fitness Goals</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Build muscle, lose weight" {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a goal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="build-muscle">Build Muscle</SelectItem>
+                            <SelectItem value="lose-weight">Lose Weight</SelectItem>
+                            <SelectItem value="increase-strength">Increase Strength</SelectItem>
+                            <SelectItem value="improve-endurance">Improve Endurance</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormDescription>What do you want to achieve?</FormDescription>
                       </FormItem>
                     )}
@@ -396,58 +481,13 @@ export default function Home() {
         </section>
       ) : (
         <>
-          {/* Recommended Plan Section */}
-          {recommendedPlan && (
-            <section className="mb-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recommended Training Plans</CardTitle>
-                  <CardDescription>
-                    Based on your input, here are the recommended training plans:
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {getRecommendedPlans().map((plan) => (
-                    <div key={plan.id} className="mb-4">
-                      <h3 className="text-xl font-semibold">{plan.name} ({plan.difficulty})</h3>
-                      <p>{plan.description}</p>
-                      <p>Follow the exercises below for week {currentWeek}:</p>
-                      <ul>
-                        {currentExercises.map((exercise, index) => (
-                          <li key={index} className="flex items-center justify-between py-2">
-                            <div>
-                              {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
-                            </div>
-                            <Select>
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Replace Exercise"/>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="alternative-1" onClick={() => handleReplaceExercise(exercise.name)}>
-                                  Alternative 1
-                                </SelectItem>
-                                <SelectItem value="alternative-2" onClick={() => handleReplaceExercise(exercise.name)}>
-                                  Alternative 2
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="flex justify-between mt-4">
-                        <Button onClick={handlePrevWeek} disabled={currentWeek === 1}>
-                          Previous Week
-                        </Button>
-                        <Button onClick={handleNextWeek}>
-                          Next Week
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </section>
-          )}
+          <TrainingPlansSection
+            recommendedPlan={recommendedPlan}
+            currentWeek={currentWeek}
+            handlePrevWeek={handlePrevWeek}
+            handleNextWeek={handleNextWeek}
+            handleReplaceExercise={handleReplaceExercise}
+          />
 
           {/* AI Workout Suggestion Section */}
           <section className="mb-8">
