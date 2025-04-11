@@ -156,12 +156,14 @@ const TrainingPlansSection = ({
           
             
               
-                <CardTitle>Recommended Training Plans</CardTitle>
+                
+                  Recommended Training Plans
+                
               
             
             
               
-                Based on your input, here are the recommended training plans:
+                {`Based on your input, here are the recommended training plans:`}
               
             
           
@@ -443,17 +445,22 @@ export default function Home() {
              
                 
                   
-                    <CardTitle>Recommended Training Plans</CardTitle>
+                    
+                      Recommended Training Plans
+                    
                   
                 
               
               
-                Based on your input, here are the recommended training plans:
+                {`Based on your input, here are the recommended training plans:`}
               
             
-          )}
+          
         
       )}
     
   );
 }
+
+
+
