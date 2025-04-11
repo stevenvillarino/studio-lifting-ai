@@ -270,8 +270,11 @@ const TrainingPlansSection = ({
 export default function Home() {
   const {toast} = useToast();
 
-  // Add state to check if it's client side
   const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null); // Track selected training plan
   const [exerciseProgress, setExerciseProgress] = useState<{
@@ -315,10 +318,6 @@ export default function Home() {
       }
     });
     return forms;
-  }, []);
-
-  useEffect(() => {
-    setIsClient(true);
   }, []);
 
     // Handlers for previous and next week buttons
