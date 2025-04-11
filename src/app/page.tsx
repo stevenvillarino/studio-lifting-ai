@@ -4,6 +4,8 @@ import {useState} from 'react';
 
 import {generateWorkoutPlan, GenerateWorkoutPlanOutput} from '@/ai/flows/generate-workout-plan';
 import {suggestWorkout, SuggestWorkoutOutput} from '@/ai/flows/suggest-workout';
+import {suggestExerciseReplacement, SuggestExerciseReplacementOutput} from '@/ai/flows/suggest-exercise-replacement';
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel} from '@/components/ui/form';
@@ -13,9 +15,12 @@ import {Skeleton} from '@/components/ui/skeleton';
 import {Slider} from '@/components/ui/slider';
 import {Textarea} from '@/components/ui/textarea';
 import {useToast} from '@/hooks/use-toast';
+import {cn} from '@/lib/utils';
+import {CheckCircle, Circle, Dumbbell, Loader2} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
+// Define schemas for forms and data structures
 const formSchema = z.object({
   exercise: z.string().min(2, {
     message: 'Exercise must be at least 2 characters.',
@@ -30,6 +35,56 @@ const workoutPlanSchema = z.object({
   }),
 });
 
+const exerciseReplacementSchema = z.object({
+  currentExercise: z.string().min(2, {
+    message: 'Exercise name must be at least 2 characters.',
+  }),
+  fitnessGoals: z.string(),
+  equipmentAvailable: z.string(),
+  muscleGroup: z.string(),
+});
+
+// Define training plans
+const trainingPlans = [
+  {
+    id: 'hypertrophy-upper',
+    name: 'Upper Body Hypertrophy',
+    description: 'A 4-week plan focused on building muscle in the upper body.',
+    duration: '4 Weeks',
+    focus: 'Upper Body',
+    exercises: [
+      {name: 'Bench Press', sets: 3, reps: '8-12', weight: '70% of 1RM'},
+      {name: 'Overhead Press', sets: 3, reps: '8-12', weight: '65% of 1RM'},
+      {name: 'Pull-ups', sets: 3, reps: 'As many as possible', weight: 'Bodyweight'},
+    ],
+  },
+  {
+    id: 'hypertrophy-lower',
+    name: 'Lower Body Hypertrophy',
+    description: 'A 4-week plan focused on building muscle in the lower body.',
+    duration: '4 Weeks',
+    focus: 'Lower Body',
+    exercises: [
+      {name: 'Squats', sets: 3, reps: '8-12', weight: '70% of 1RM'},
+      {name: 'Deadlifts', sets: 1, reps: '5', weight: '85% of 1RM'},
+      {name: 'Leg Press', sets: 3, reps: '12-15', weight: '60% of 1RM'},
+    ],
+  },
+  {
+    id: 'full-body-strength',
+    name: 'Full Body Strength',
+    description: 'A 4-week plan focused on increasing overall strength.',
+    duration: '4 Weeks',
+    focus: 'Full Body',
+    exercises: [
+      {name: 'Barbell Rows', sets: 3, reps: '5-8', weight: '75% of 1RM'},
+      {name: 'Push Press', sets: 3, reps: '5-8', weight: '75% of 1RM'},
+      {name: 'Goblet Squats', sets: 3, reps: '8-12', weight: 'Moderate'},
+    ],
+  },
+];
+
+// Main component
 export default function Home() {
   const {toast} = useToast();
   const [aiResult, setAiResult] = useState<SuggestWorkoutOutput | null>(null);
@@ -37,7 +92,14 @@ export default function Home() {
     useState<GenerateWorkoutPlanOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [workoutPlanLoading, setWorkoutPlanLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null); // Track selected training plan
+  const [exerciseProgress, setExerciseProgress] = useState<{
+    [exerciseName: string]: boolean;
+  }>({}); // Track individual exercise progress
+  const [aiReplacement, setAiReplacement] = useState<SuggestExerciseReplacementOutput | null>(null);
+  const [replacementLoading, setReplacementLoading] = useState(false);
 
+  // Form hooks
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
       exercise: '',
@@ -52,6 +114,16 @@ export default function Home() {
     },
   });
 
+  const exerciseReplacementForm = useForm<z.infer<typeof exerciseReplacementSchema>>({
+    defaultValues: {
+      currentExercise: '',
+      fitnessGoals: '',
+      equipmentAvailable: '',
+      muscleGroup: '',
+    },
+  });
+
+  // Form submission handlers
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     setAiResult(null);
@@ -88,10 +160,85 @@ export default function Home() {
     }
   }
 
+  async function onSuggestExerciseReplacement(values: z.infer<typeof exerciseReplacementSchema>) {
+    setReplacementLoading(true);
+    setAiReplacement(null);
+    try {
+      const result = await suggestExerciseReplacement(values);
+      setAiReplacement(result);
+      toast({
+        title: 'Exercise Replacement Suggestion',
+        description: 'Replacement exercise suggested successfully.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to suggest exercise replacement.',
+        variant: 'destructive',
+      });
+    } finally {
+      setReplacementLoading(false);
+    }
+  }
+
+  // Handler to select a training plan
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlan(planId);
+    // Reset progress when a new plan is selected
+    setExerciseProgress({});
+  };
+
+  // Handler to toggle exercise progress
+  const handleToggleProgress = (exerciseName: string) => {
+    setExerciseProgress(prevProgress => ({
+      ...prevProgress,
+      [exerciseName]: !prevProgress[exerciseName],
+    }));
+  };
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6 text-center">LiftAssist</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {/* Training Plans Section */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Training Plans</h2>
+        <Accordion type="single" collapsible>
+          {trainingPlans.map(plan => (
+            <AccordionItem key={plan.id} value={plan.id}>
+              <AccordionTrigger onClick={() => handleSelectPlan(plan.id)}>
+                {plan.name} - {plan.duration}
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="mb-2">{plan.description}</p>
+                <h3 className="font-semibold">Exercises:</h3>
+                <ul>
+                  {plan.exercises.map((exercise, index) => (
+                    <li key={index} className="flex items-center justify-between py-2">
+                      <div>
+                        <button
+                          onClick={() => handleToggleProgress(exercise.name)}
+                          className="mr-2 focus:outline-none"
+                        >
+                          {exerciseProgress[exercise.name] ? (
+                            <CheckCircle className="h-5 w-5 text-green-500"/>
+                          ) : (
+                            <Circle className="h-5 w-5 text-gray-400"/>
+                          )}
+                        </button>
+                        {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+
+      {/* AI Workout Suggestion Section */}
+      <section className="mb-8">
         <Card>
           <CardHeader>
             <CardTitle>Workout Suggestion</CardTitle>
@@ -150,33 +297,17 @@ export default function Home() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading} className="bg-primary text-primary-foreground">
                   {loading ? (
                     <>
-                      <svg
-                        className="animate-spin h-5 w-5 mr-2"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                       Suggest Workout
                     </>
                   ) : (
-                    'Suggest Workout'
+                    <>
+                      <Dumbbell className="mr-2 h-4 w-4"/>
+                      Suggest Workout
+                    </>
                   )}
                 </Button>
               </form>
@@ -194,11 +325,14 @@ export default function Home() {
                 </p>
               </div>
             ) : loading ? (
-              <Skeleton className="w-full h-20 mt-6" />
+              <Skeleton className="w-full h-20 mt-6"/>
             ) : null}
           </CardContent>
         </Card>
+      </section>
 
+      {/* AI Workout Plan Generation Section */}
+      <section className="mb-8">
         <Card>
           <CardHeader>
             <CardTitle>Generate Workout Plan</CardTitle>
@@ -230,33 +364,17 @@ export default function Home() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={workoutPlanLoading}>
+                <Button type="submit" disabled={workoutPlanLoading} className="bg-primary text-primary-foreground">
                   {workoutPlanLoading ? (
                     <>
-                      <svg
-                        className="animate-spin h-5 w-5 mr-2"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                       Generate Workout Plan
                     </>
                   ) : (
-                    'Generate Workout Plan'
+                    <>
+                      <Dumbbell className="mr-2 h-4 w-4"/>
+                      Generate Workout Plan
+                    </>
                   )}
                 </Button>
               </form>
@@ -267,11 +385,103 @@ export default function Home() {
                 <p>{aiWorkoutPlan.workoutPlan}</p>
               </div>
             ) : workoutPlanLoading ? (
-              <Skeleton className="w-full h-20 mt-6" />
+              <Skeleton className="w-full h-20 mt-6"/>
             ) : null}
           </CardContent>
         </Card>
-      </div>
+      </section>
+
+      {/* Exercise Replacement Suggestion Section */}
+      <section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Suggest Exercise Replacement</CardTitle>
+            <CardDescription>
+              Suggest an alternative exercise based on your criteria.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...exerciseReplacementForm}>
+              <form onSubmit={exerciseReplacementForm.handleSubmit(onSuggestExerciseReplacement)}
+                    className="space-y-4">
+                <FormField
+                  control={exerciseReplacementForm.control}
+                  name="currentExercise"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Current Exercise</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Squats" {...field} />
+                      </FormControl>
+                      <FormDescription>Enter the exercise you want to replace.</FormDescription>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={exerciseReplacementForm.control}
+                  name="fitnessGoals"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Fitness Goals</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Increase strength" {...field} />
+                      </FormControl>
+                      <FormDescription>Enter your fitness goals.</FormDescription>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={exerciseReplacementForm.control}
+                  name="equipmentAvailable"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Equipment Available</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Dumbbells, Resistance Bands" {...field} />
+                      </FormControl>
+                      <FormDescription>List the equipment you have available.</FormDescription>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={exerciseReplacementForm.control}
+                  name="muscleGroup"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>Muscle Group</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Legs" {...field} />
+                      </FormControl>
+                      <FormDescription>Enter the muscle group you want to target.</FormDescription>
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" disabled={replacementLoading} className="bg-primary text-primary-foreground">
+                  {replacementLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                      Suggest Replacement
+                    </>
+                  ) : (
+                    'Suggest Replacement'
+                  )}
+                </Button>
+              </form>
+            </Form>
+            {aiReplacement ? (
+              <div className="mt-6">
+                <h3 className="text-xl font-semibold mb-2">Replacement Suggestion:</h3>
+                <p>{aiReplacement.suggestedExercise}</p>
+                <p className="mt-2">
+                  <span className="font-semibold">Reasoning:</span> {aiReplacement.reasoning}
+                </p>
+              </div>
+            ) : replacementLoading ? (
+              <Skeleton className="w-full h-20 mt-6"/>
+            ) : null}
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

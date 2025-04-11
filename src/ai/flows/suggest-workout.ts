@@ -1,4 +1,3 @@
-// src/ai/flows/suggest-workout.ts
 'use server';
 
 /**
@@ -93,3 +92,4 @@ async input => {
   const {output} = await prompt(input);
   return output!;
 });
+
