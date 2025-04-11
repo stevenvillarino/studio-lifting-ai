@@ -158,7 +158,7 @@ const TrainingPlansSection = ({
               
                 
                   
-                      Recommended Training Plans
+                      {`Recommended Training Plans`}
                   
                 
               
