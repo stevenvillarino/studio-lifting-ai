@@ -151,116 +151,98 @@ const TrainingPlansSection = ({
   return (
     <>
       {recommendedPlan && (
-        <section className="mb-8">
-          <Card>
-            <CardHeader>
+        
+          
+            
               <CardTitle>Recommended Training Plans</CardTitle>
               <CardDescription>
-                Based on your input, here are the recommended training plans:
+                {`Based on your input, here are the recommended training plans:`}
               </CardDescription>
-            </CardHeader>
-            <CardContent>
+            
+            
               {getRecommendedPlans().map((plan) => {
                 const currentExercises = getExercisesForDay(plan.id, selectedDay);
 
                 return (
-                  <div key={plan.id} className="mb-4">
-                    <h3 className="text-xl font-semibold">{plan.name} ({plan.difficulty})</h3>
-                    <p>{plan.description}</p>
-                    <p>Follow the exercises below for week {currentWeek}, {selectedDay}:</p>
-                    <ul>
+                  
+                    
+                      {plan.name} ({plan.difficulty})
+                    
+                    {plan.description}
+                    Follow the exercises below for week {currentWeek}, {selectedDay}:
+                    
                       {currentExercises.map((exercise, index) => (
-                        <li key={index} className="flex items-center justify-between py-2">
-                            <div>
+                        
+                            
                               {exercise.name} - {exercise.sets} sets, {exercise.reps} reps @ {exercise.weight}
-                            </div>
+                            
 
-                            <div className="flex gap-2">
-                              <Select>
+                            
+                              
                                 <SelectTrigger className="w-[180px]">
-                                  <SelectValue placeholder="Replace Exercise"/>
+                                  
                                 </SelectTrigger>
-                                <SelectContent>
+                                
                                   {alternativeExercises[exercise.name] && alternativeExercises[exercise.name].map((altExercise, idx) => (
-                                    <SelectItem
-                                      key={idx}
-                                      value={altExercise}
-                                      onClick={() => handleReplaceExercise(exercise.name, altExercise)}
-                                    >
+                                    
                                       {altExercise}
-                                    </SelectItem>
+                                    
                                   ))}
-                                </SelectContent>
-                              </Select>
-                              <Form {...workoutLogForms[exercise.name]}>
-                                <form onSubmit={workoutLogForms[exercise.name].handleSubmit((values) => handleLogWorkout(exercise.name, values))} className="space-y-2">
-                                  <FormField
-                                    control={workoutLogForms[exercise.name].control}
-                                    name="sets"
-                                    render={({field}) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Input placeholder="Sets" {...field} />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={workoutLogForms[exercise.name].control}
-                                    name="reps"
-                                    render={({field}) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Input placeholder="Reps" {...field} />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={workoutLogForms[exercise.name].control}
-                                    name="weight"
-                                    render={({field}) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Input placeholder="Weight" {...field} />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={workoutLogForms[exercise.name].control}
-                                    name="date"
-                                    render={({field}) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Input type="date" {...field} />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <Button type="submit" size="sm">
+                                
+                              
+                              
+                                
+                                  
+                                    
+                                      
+                                        
+                                      
+                                    
+                                  
+                                  
+                                    
+                                      
+                                        
+                                      
+                                    
+                                  
+                                  
+                                    
+                                      
+                                        
+                                      
+                                    
+                                  
+                                  
+                                    
+                                      
+                                        
+                                      
+                                    
+                                  
+                                  
                                     Log Workout
-                                  </Button>
-                                </form>
-                              </Form>
-                            </div>
-                        </li>
+                                  
+                                
+                              
+                            
+                        
                       ))}
-                    </ul>
-                    <div className="flex justify-between mt-4">
-                      <Button onClick={handlePrevWeek} disabled={currentWeek === 1}>
+                    
+                    
+                      
                         Previous Week
-                      </Button>
-                      <Button onClick={handleNextWeek}>
+                      
+                      
                         Next Week
-                      </Button>
-                    </div>
-                  </div>
+                      
+                    
+                  
                 );
               })}
-            </CardContent>
-          </Card>
-        </section>
+            
+          
+        
       )}
     </>
   );
@@ -274,26 +256,27 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null); // Track selected training plan
-  const [exerciseProgress, setExerciseProgress] = useState<{
-    [exerciseName: string]: boolean;
-  }>({}); // Track individual exercise progress
-  const [historicalWorkouts, setHistoricalWorkouts] = useState<GetHistoricalWorkoutsOutput | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState(null); // Track selected training plan
+  const [exerciseProgress, setExerciseProgress] = useState({}); // Track individual exercise progress
+  const [historicalWorkouts, setHistoricalWorkouts] = useState(null);
   const [historicalDataLoading, setHistoricalDataLoading] = useState(false);
 
   const [isOnboarding, setIsOnboarding] = useState(true); // Track onboarding state
-  const [recommendedPlan, setRecommendedPlan] = useState<string | null>(null); // Track recommended plan
+  const [recommendedPlan, setRecommendedPlan] = useState(null); // Track recommended plan
   const [currentWeek, setCurrentWeek] = useState(1); // Track current week of the program
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track settings state
 
-  const workoutLogFormsMemo = useMemo(() => {
-    const forms = {};
+  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
+
+  // Initialize workoutLogForms within the component
+  const [workoutLogForms, setWorkoutLogForms] = useState(() => {
+    const initialForms = {};
     trainingPlans.forEach(plan => {
       if (plan.exercises) {
         Object.values(plan.exercises).forEach(exercisesForDay => {
           exercisesForDay.forEach(exercise => {
-            if (!forms[exercise.name]) {
-              forms[exercise.name] = useForm<z.infer<typeof workoutLogSchema>>({
+            if (!initialForms[exercise.name]) {
+              initialForms[exercise.name] = useForm({
                 defaultValues: {
                   sets: '',
                   reps: '',
@@ -306,20 +289,24 @@ export default function Home() {
         });
       }
     });
-    return forms;
-  }, []);
+    return initialForms;
+  });
 
-    // Handlers for previous and next week buttons
-    const handlePrevWeek = () => {
-      setCurrentWeek(prevWeek => Math.max(prevWeek - 1, 1));
-    };
+  const workoutLogFormsMemo = useMemo(() => {
+    return workoutLogForms;
+  }, [workoutLogForms]);
 
-    const handleNextWeek = () => {
-      setCurrentWeek(prevWeek => prevWeek + 1);
-    };
+  // Handlers for previous and next week buttons
+  const handlePrevWeek = () => {
+    setCurrentWeek(prevWeek => Math.max(prevWeek - 1, 1));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeek(prevWeek => prevWeek + 1);
+  };
 
   // Onboarding form
-  const onboardingForm = useForm<z.infer<typeof onboardingSchema>>({
+  const onboardingForm = useForm({
     defaultValues: {
       fitnessGoals: 'build-muscle',
       focus: 'upper',
@@ -327,7 +314,7 @@ export default function Home() {
   });
 
   // Handler for onboarding form submission
-  const handleOnboardingSubmit = (values: z.infer<typeof onboardingSchema>) => {
+  const handleOnboardingSubmit = (values) => {
     // Basic logic to recommend a plan (can be improved with AI)
     const recommendedPlans = trainingPlans.filter(plan =>
       plan.focus.toLowerCase().includes(values.focus.toLowerCase())
@@ -359,28 +346,28 @@ export default function Home() {
     return plan.exercises[dayOfWeek] || [];
   };
 
-    const handleReplaceExercise = async (exerciseName: string, replacementExercise: string) => {
-      toast({
-        title: 'Exercise Replaced',
-        description: `${exerciseName} replaced with ${replacementExercise}.`,
-      });
-    };
+  const handleReplaceExercise = async (exerciseName, replacementExercise) => {
+    toast({
+      title: 'Exercise Replaced',
+      description: `${exerciseName} replaced with ${replacementExercise}.`,
+    });
+  };
 
-    const handleLogWorkout = async (exerciseName: string, logData: any) => {
-      //fetch historical data if exercise name matches;
-      // Update historical data (replace with actual data storage logic)
-      toast({
-        title: 'Workout Logged',
-        description: `Logged workout data for ${exerciseName}.`,
-      });
-    };
+  const handleLogWorkout = async (exerciseName, logData) => {
+    //fetch historical data if exercise name matches;
+    // Update historical data (replace with actual data storage logic)
+    toast({
+      title: 'Workout Logged',
+      description: `Logged workout data for ${exerciseName}.`,
+    });
+  };
 
-  const handleGetHistoricalData = async (exerciseName: string) => {
+  const handleGetHistoricalData = async (exerciseName) => {
     setHistoricalDataLoading(true);
     try {
       const result = await getHistoricalWorkouts({exercise: exerciseName});
       setHistoricalWorkouts(result);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to retrieve historical workout data.',
@@ -395,92 +382,85 @@ export default function Home() {
     if (!recommendedPlan) return [];
     return recommendedPlan.split(',').map(planId => trainingPlans.find(p => p.id === planId)).filter(Boolean);
   };
-  
+
   useEffect(() => {
-    setWorkoutLogForms(workoutLogFormsMemo);
-  }, [workoutLogFormsMemo]);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    // Ensure workoutLogForms are updated only after they are initialized
+    if (isClient) {
+      setWorkoutLogForms(workoutLogFormsMemo);
+    }
+  }, [isClient, workoutLogFormsMemo]);
+  
 
   const getDayOfWeek = () => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     return days[new Date().getDay()];
   }
 
-  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6 text-center">LiftAssist</h1>
+    
+      
+        LiftAssist
+      
 
       {/* Onboarding Section */}
       {isOnboarding ? (
-        <section className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Welcome to LiftAssist!</CardTitle>
-              <CardDescription>
-                Let's set up your profile to recommend the best training plan for you.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...onboardingForm}>
-                <form onSubmit={onboardingForm.handleSubmit(handleOnboardingSubmit)} className="space-y-4">
-                  <FormField
-                    control={onboardingForm.control}
-                    name="fitnessGoals"
-                    render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Fitness Goals</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a goal" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="build-muscle">Build Muscle</SelectItem>
-                            <SelectItem value="lose-weight">Lose Weight</SelectItem>
-                            <SelectItem value="increase-strength">Increase Strength</SelectItem>
-                            <SelectItem value="improve-endurance">Improve Endurance</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>What do you want to achieve?</FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={onboardingForm.control}
-                    name="focus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Training Focus</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a focus" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="upper">Upper Body</SelectItem>
-                            <SelectItem value="lower">Lower Body</SelectItem>
-                            <SelectItem value="full">Full Body</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>What area do you want to focus on?</FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="bg-primary text-primary-foreground">
-                    Get Recommended Plan
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </section>
+        
+          
+            
+              Welcome to LiftAssist!
+            
+            
+              Let's set up your profile to recommend the best training plan for you.
+            
+          
+          
+            
+              
+                
+                  Fitness Goals
+                
+                
+                  
+                    
+                      
+                    
+                  
+                  
+                    Build Muscle
+                    Lose Weight
+                    Increase Strength
+                    Improve Endurance
+                  
+                
+                What do you want to achieve?
+              
+              
+                Training Focus
+                
+                  
+                    
+                      
+                    
+                  
+                  
+                    Upper Body
+                    Lower Body
+                    Full Body
+                  
+                
+                What area do you want to focus on?
+              
+              
+                Get Recommended Plan
+              
+            
+          
+        
       ) : (
         <>
           {isClient && (
@@ -497,47 +477,53 @@ export default function Home() {
           )}
 
           {/* Historical Data Section */}
-          <section className="mt-8">
+          
             {historicalWorkouts ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Historical Workout Data</CardTitle>
-                  <CardDescription>
-                    A history of your workouts for this exercise.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Sets</TableHead>
-                        <TableHead>Reps</TableHead>
-                        <TableHead>Weight (lbs)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+              
+                
+                  Historical Workout Data
+                
+                
+                  A history of your workouts for this exercise.
+                
+                
+                  
+                    
+                      Date
+                      Sets
+                      Reps
+                      Weight (lbs)
+                    
+                    
                       {historicalWorkouts.map((workout, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{workout.date}</TableCell>
-                          <TableCell>{workout.sets}</TableCell>
-                          <TableCell>{workout.reps}</TableCell>
-                          <TableCell>{workout.weight}</TableCell>
-                        </TableRow>
+                        
+                          
+                            {workout.date}
+                          
+                          
+                            {workout.sets}
+                          
+                          
+                            {workout.reps}
+                          
+                          
+                            {workout.weight}
+                          
+                        
                       ))}
-                    </TableBody>
-                    <TableCaption>
+                    
+                    
                       Historical workout data.
-                    </TableCaption>
-                  </Table>
-                </CardContent>
-              </Card>
+                    
+                  
+                
+              
             ) : historicalDataLoading ? (
-              <Skeleton className="w-full h-40 mt-6"/>
+              
             ) : null}
-          </section>
+          
         </>
       )}
-    </div>
+    
   );
 }
