@@ -157,9 +157,7 @@ const TrainingPlansSection = ({
             
               
                 
-                  
-                    Recommended Training Plans
-                  
+                  Recommended Training Plans
                 
               
             
@@ -446,7 +444,9 @@ export default function Home() {
              
                 
                   
-                    Recommended Training Plans
+                    
+                      Recommended Training Plans
+                    
                   
                 
               
@@ -461,5 +461,3 @@ export default function Home() {
     
   );
 }
-
-
