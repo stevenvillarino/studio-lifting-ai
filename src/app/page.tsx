@@ -270,11 +270,9 @@ const TrainingPlansSection = ({
 export default function Home() {
   const {toast} = useToast();
 
+  // Add state to check if it's client side
   const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null); // Track selected training plan
   const [exerciseProgress, setExerciseProgress] = useState<{
@@ -287,15 +285,6 @@ export default function Home() {
   const [recommendedPlan, setRecommendedPlan] = useState<string | null>(null); // Track recommended plan
   const [currentWeek, setCurrentWeek] = useState(1); // Track current week of the program
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track settings state
-
-  const getDayOfWeek = () => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    return days[new Date().getDay()];
-  }
-
-  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
-
-  const [workoutLogForms, setWorkoutLogForms] = useState({});
 
   const workoutLogFormsMemo = useMemo(() => {
     const forms = {};
@@ -410,6 +399,17 @@ export default function Home() {
   useEffect(() => {
     setWorkoutLogForms(workoutLogFormsMemo);
   }, [workoutLogFormsMemo]);
+
+  const getDayOfWeek = () => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return days[new Date().getDay()];
+  }
+
+  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <div className="container mx-auto py-10">
