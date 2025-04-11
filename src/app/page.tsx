@@ -164,7 +164,7 @@ const TrainingPlansSection = ({
               
             
             
-              {`Based on your input, here are the recommended training plans:`}
+              Based on your input, here are the recommended training plans:
               
             
           
@@ -446,13 +446,13 @@ export default function Home() {
              
                 
                   
-                    
-                      Recommended Training Plans
-                    
+                    Recommended Training Plans
                   
                 
               
-              {`Based on your input, here are the recommended training plans:`}
+              
+                Based on your input, here are the recommended training plans:
+                
               
             
           
@@ -461,3 +461,5 @@ export default function Home() {
     
   );
 }
+
+
