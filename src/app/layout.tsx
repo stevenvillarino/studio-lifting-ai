@@ -17,7 +17,6 @@ const geistMono = Geist_Mono({
 });
 
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        {isClient ? children : null}
       </body>
     </html>
   );
