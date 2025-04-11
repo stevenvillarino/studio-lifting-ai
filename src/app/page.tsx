@@ -6,6 +6,7 @@ import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader} from '@/components/ui/card';
+import {CardTitle} from "@/components/ui/card"
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel} from '@/components/ui/form';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
@@ -18,7 +19,7 @@ import {CheckCircle, Circle, Dumbbell, Loader2, Settings} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {CardTitle} from "@/components/ui/card"
+
 
 // Define schemas for forms and data structures
 const workoutLogSchema = z.object({
@@ -157,7 +158,9 @@ const TrainingPlansSection = ({
             
               
                 
-                  Recommended Training Plans
+                  
+                    Recommended Training Plans
+                  
                 
               
             
