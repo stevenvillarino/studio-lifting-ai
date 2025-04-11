@@ -20,8 +20,7 @@ const SuggestWorkoutInputSchema = z.object({
   fitnessGoals: z
     .string()
     .describe(
-      'The user\'s fitness goals, such as increasing strength, building muscle, \
-       or improving endurance.'
+      'The user\'s fitness goals, such as increasing strength, building muscle, or improving endurance.'
     ),
   exercise: z.string().describe('The exercise for which to suggest a workout.'),
 });
@@ -92,4 +91,3 @@ async input => {
   const {output} = await prompt(input);
   return output!;
 });
-
