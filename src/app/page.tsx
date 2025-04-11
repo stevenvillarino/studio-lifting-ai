@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useMemo} from 'react';
 
 import {getHistoricalWorkouts, GetHistoricalWorkoutsOutput} from '@/ai/flows/get-historical-workouts';
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from '@/components/ui/accordion';
@@ -282,23 +282,16 @@ export default function Home() {
   const [currentWeek, setCurrentWeek] = useState(1); // Track current week of the program
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track settings state
 
-  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
-
-  // Add state to check if it's client side
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  function getDayOfWeek() {
+  const getDayOfWeek = () => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     return days[new Date().getDay()];
   }
 
+  const [selectedDay, setSelectedDay] = useState(getDayOfWeek());
+
   const [workoutLogForms, setWorkoutLogForms] = useState({});
 
-  useEffect(() => {
+  const workoutLogFormsMemo = useMemo(() => {
     const forms = {};
     trainingPlans.forEach(plan => {
       if (plan.exercises) {
@@ -318,16 +311,20 @@ export default function Home() {
         });
       }
     });
-    setWorkoutLogForms(forms);
+    return forms;
   }, []);
 
-  // Onboarding form
-  const onboardingForm = useForm<z.infer<typeof onboardingSchema>>({
-    defaultValues: {
-      fitnessGoals: 'build-muscle',
-      focus: 'upper',
-    },
-  });
+  useEffect(() => {
+    setWorkoutLogForms(workoutLogFormsMemo);
+  }, [workoutLogFormsMemo]);
+
+
+  // Add state to check if it's client side
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
     // Handlers for previous and next week buttons
     const handlePrevWeek = () => {
@@ -337,6 +334,14 @@ export default function Home() {
     const handleNextWeek = () => {
       setCurrentWeek(prevWeek => prevWeek + 1);
     };
+
+  // Onboarding form
+  const onboardingForm = useForm<z.infer<typeof onboardingSchema>>({
+    defaultValues: {
+      fitnessGoals: 'build-muscle',
+      focus: 'upper',
+    },
+  });
 
   // Handler for onboarding form submission
   const handleOnboardingSubmit = (values: z.infer<typeof onboardingSchema>) => {
@@ -538,3 +543,5 @@ export default function Home() {
     </div>
   );
 }
+
+

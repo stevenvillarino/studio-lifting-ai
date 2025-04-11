@@ -3,7 +3,6 @@
 import type {Metadata} from 'next/server';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
-import {useEffect, useState} from 'react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,17 +19,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {isClient ? children : null}
+        {children}
       </body>
     </html>
   );
 }
+
