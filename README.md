@@ -60,6 +60,21 @@ graph TD;
     npm install
     ```
 
+### Environment Configuration
+
+This project requires a Google Generative AI API key to function.
+
+1.  **Create a `.env` file**: In the root of the project, create a file named `.env`.
+2.  **Use the example file**: Copy the contents of `.env.example` into your new `.env` file.
+    ```bash
+    cp .env.example .env
+    ```
+3.  **Add your API Key**: Open the `.env` file and replace `YOUR_API_KEY_HERE` with your actual Google Generative AI API key. You can obtain an API key from the Google AI Studio website.
+4.  **IMPORTANT SECURITY NOTICE**:
+    *   The `.env` file contains sensitive credentials. **DO NOT commit this file to Git.**
+    *   Keep your API key secret and do not share it publicly.
+    *   The project's `.gitignore` file is already configured to ignore the `.env` file, helping to prevent accidental commits.
+
 ### Running the Development Server
 
 To start the development server:
